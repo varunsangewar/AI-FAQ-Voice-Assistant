@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant Chat</title>
+    <style>
+        /* RESET & BASE */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #1a1a27 !important; color: #fff !important; display: flex; height: 100vh; overflow: hidden; }
+
+        /* LAYOUT: SIDEBAR + MAIN CONTENT */
+        .dashboard-wrapper { display: flex; width: 100%; height: 100vh; }
+        
+        /* SIDEBAR (Matches Dashboard) */
+        .sidebar {
+            width: 260px;
+            background-color: #151521;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            border-right: 1px solid #2d2d3b;
+        }
+        .sidebar h2 { color: #fff; font-size: 20px; padding-left: 10px; letter-spacing: 1px; }
+        .nav-menu { display: flex; flex-direction: column; gap: 10px; }
+        .nav-menu a {
+            text-decoration: none; color: #8b8b9f; padding: 12px 15px; border-radius: 8px;
+            font-size: 15px; font-weight: 500; transition: all 0.3s ease; display: flex; align-items: center; gap: 10px;
+        }
+        .nav-menu a:hover { background-color: #1e1e2d; color: #fff; }
+        .nav-menu a.active { background: linear-gradient(90deg, rgba(0,210,255,0.1) 0%, transparent 100%); color: #00d2ff; border-left: 4px solid #00d2ff; }
+
+        /* MAIN CONTENT AREA */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 30px 40px;
+            background-color: #1a1a27;
+            height: 100vh;
+        }
+        .header-top { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .header-top h1 { font-size: 24px; font-weight: 600; }
+
+        /* CHAT INTERFACE */
+        .chat-panel {
+            background-color: #1e1e2d;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #2d2d3b;
+        }
+
+        #chatBox {
+            flex: 1;
+            padding: 25px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* Message Bubbles */
+        .msg-container { display: flex; flex-direction: column; max-width: 80%; }
+        .msg-container.user { align-self: flex-end; align-items: flex-end; }
+        .msg-container.ai { align-self: flex-start; align-items: flex-start; }
+
+        .bubble { padding: 12px 18px; border-radius: 16px; font-size: 15px; line-height: 1.5; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        
+        .bubble.user { background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%); color: white; border-bottom-right-radius: 4px; }
+        .bubble.ai { background: #2d2d3b; color: #e1e1e6; border: 1px solid #3a3a4c; border-bottom-left-radius: 4px; }
+
+        /* Feedback Buttons */
+        .feedback-btns { margin-top: 8px; display: flex; gap: 8px; }
+        .feedback-btns button {
+            background: #151521; border: 1px solid #3a3a4c; color: #8b8b9f; padding: 4px 10px;
+            border-radius: 20px; cursor: pointer; font-size: 12px; transition: 0.2s;
+        }
+        .feedback-btns button:hover { background: #00d2ff; color: #000; border-color: #00d2ff; }
+
+        /* Input Area */
+        .input-area { padding: 20px 25px; background-color: #151521; border-top: 1px solid #2d2d3b; display: flex; gap: 15px; align-items: center; }
+        
+        #userQuestion {
+            flex: 1; padding: 14px 20px; border-radius: 12px; border: 1px solid #3a3a4c;
+            background: #1a1a27; color: white; font-size: 15px; transition: 0.3s;
+        }
+        #userQuestion:focus { outline: none; border-color: #00d2ff; box-shadow: 0 0 10px rgba(0,210,255,0.2); }
+        
+        .action-btn {
+            padding: 12px 20px; border-radius: 12px; border: none; cursor: pointer; font-weight: bold; font-size: 15px; transition: 0.3s;
+        }
+        #micBtn { background-color: #2d2d3b; color: white; font-size: 18px; border: 1px solid #3a3a4c; }
+        #micBtn:hover { background-color: #3a3a4c; }
+        .send-btn { background: linear-gradient(135deg, #b066fe 0%, #63e2ff 100%); color: white; box-shadow: 0 4px 15px rgba(176,102,254,0.3); }
+        .send-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #3a3a4c; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #8b8b9f; }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-wrapper">
+        <aside class="sidebar">
+            <h2>Admin<span style="color: #00d2ff;">Panel</span></h2>
+            <nav class="nav-menu">
+                <a href="/" class="active">💬 Chat Assistant</a>
+                <a href="/dashboard">📊 Dashboard</a>
+                <a href="/admin">⚙️ Settings</a>
+                <a href="/feedback-logs">📝 Feedback Logs</a>
+                <a href="/logout" style="margin-top: 20px; color: #ff4d4d;">🚪 Logout</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div class="header-top">
+                <h1>AI Support Assistant</h1>
+                <div style="color: #1DD05D; font-size: 14px; font-weight: 500;">● System Online</div>
+            </div>
+
+            <div class="chat-panel">
+                <div id="chatBox">
+                    <div style="color: #8b8b9f; font-style: italic; text-align: center; margin-top: auto; margin-bottom: auto;">
+                        Start typing or use your microphone to ask a question...
+                    </div>
+                </div>
+
+                <div class="input-area">
+                    <input type="text" id="userQuestion" placeholder="Ask me anything..." onkeypress="handleKeyPress(event)">
+                    
+                    <button type="button" id="micBtn" class="action-btn" onclick="startSpeechToText()" title="Use Microphone">
+                        🎤
+                    </button>
+                    
+                    <button type="button" onclick="askQuestion()" class="action-btn send-btn">
+                        Send ➔
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function handleKeyPress(event) { if (event.key === "Enter") askQuestion(); }
+
+        function sendFeedback(chatId, rating) {
+            fetch("/feedback", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ chat_id: chatId, rating: rating })
+            }).then(() => alert("Thanks for your feedback!"));
+        }
+
+        function askQuestion() {
+            const inputField = document.getElementById("userQuestion");
+            const questionText = inputField.value.trim();
+            const chatBox = document.getElementById("chatBox");
+
+            if (questionText === "") return;
+            if (chatBox.innerText.includes("Start typing or use your microphone")) chatBox.innerHTML = "";
+
+            // Inject User Bubble
+            chatBox.innerHTML += `
+                <div class="msg-container user">
+                    <div class="bubble user">${questionText}</div>
+                </div>
+            `;
+            inputField.value = "";
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            const formData = new FormData();
+            formData.append("question", questionText);
+
+            // Fetch AI Answer
+            fetch("/ask", { method: "POST", body: formData })
+            .then(response => response.json())
+            .then(data => {
+                
+                // USE THE REAL ID SENT FROM APP.PY
+                const chatId = data.chat_id; 
+                
+                // Inject AI Bubble with Feedback Buttons using the real ID
+                chatBox.innerHTML += `
+                    <div class="msg-container ai">
+                        <div class="bubble ai">${data.answer}</div>
+                        <div class="feedback-btns">
+                            <button onclick="sendFeedback(${chatId}, 'up')">👍 Helpful</button>
+                            <button onclick="sendFeedback(${chatId}, 'down')">👎 Not Helpful</button>
+                        </div>
+                    </div>
+                `;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            })
+            .catch(error => {
+                chatBox.innerHTML += `<div class="msg-container ai"><div class="bubble ai" style="border-color: #ff0844; color: #ff0844;">⚠️ Connection Error.</div></div>`;
+            });
+        }
+
+        function startSpeechToText() {
+            const micBtn = document.getElementById("micBtn");
+            const inputField = document.getElementById("userQuestion");
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) { alert("Voice input not supported in this browser!"); return; }
+            
+            const recognition = new SpeechRecognition();
+            
+            micBtn.style.backgroundColor = "#ff0844";
+            micBtn.style.color = "#fff";
+            
+            recognition.start();
+            
+            recognition.onresult = function(event) {
+                inputField.value = event.results[0][0].transcript;
+                askQuestion();
+            };
+            
+            recognition.onend = function() {
+                micBtn.style.backgroundColor = "#2d2d3b";
+                micBtn.style.color = "#fff";
+            };
+        }
+    </script>
+</body>
+</html>

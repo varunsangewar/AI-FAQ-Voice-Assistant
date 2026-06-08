@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knowledge Base Admin</title>
+    <style>
+        /* RESET & BASE */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #1a1a27 !important; color: #fff !important; display: flex; height: 100vh; overflow: hidden; }
+
+        /* LAYOUT: SIDEBAR + MAIN CONTENT */
+        .dashboard-wrapper { display: flex; width: 100%; height: 100vh; }
+        
+        /* SIDEBAR */
+        .sidebar {
+            width: 260px;
+            background-color: #151521;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            border-right: 1px solid #2d2d3b;
+            flex-shrink: 0;
+        }
+        .sidebar h2 { color: #fff; font-size: 20px; padding-left: 10px; letter-spacing: 1px; }
+        .nav-menu { display: flex; flex-direction: column; gap: 10px; }
+        .nav-menu a {
+            text-decoration: none; color: #8b8b9f; padding: 12px 15px; border-radius: 8px;
+            font-size: 15px; font-weight: 500; transition: all 0.3s ease; display: flex; align-items: center; gap: 10px;
+        }
+        .nav-menu a:hover { background-color: #1e1e2d; color: #fff; }
+        .nav-menu a.active { background: linear-gradient(90deg, rgba(176,102,254,0.1) 0%, transparent 100%); color: #b066fe; border-left: 4px solid #b066fe; }
+
+        /* MAIN CONTENT AREA */
+        .main-content {
+            flex: 1;
+            padding: 30px 40px;
+            background-color: #1a1a27;
+            overflow-y: auto;
+        }
+        .header-top { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; }
+        .header-top h1 { font-size: 24px; font-weight: 600; }
+
+        /* PANELS */
+        .panel { 
+            background-color: #1e1e2d; 
+            border-radius: 16px; 
+            padding: 25px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
+            border: 1px solid #2d2d3b;
+            margin-bottom: 25px;
+        }
+        .panel h3 { font-size: 18px; color: #fff; margin-bottom: 20px; font-weight: 600; }
+
+        /* FORM STYLES */
+        .theme-input {
+            width: 100%; padding: 14px 18px; border-radius: 10px; border: 1px solid #3a3a4c;
+            background: #151521; color: white; font-size: 15px; transition: 0.3s;
+        }
+        .theme-input:focus { outline: none; border-color: #b066fe; box-shadow: 0 0 10px rgba(176,102,254,0.2); }
+        
+        .btn-main {
+            padding: 12px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; border: none; 
+            color: white; font-size: 15px; transition: 0.3s; background-color: #4da6ff;
+        }
+        .btn-main:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        /* TABLE STYLES */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { text-align: left; padding: 15px; color: #8b8b9f; font-size: 12px; text-transform: uppercase; border-bottom: 1px solid #2d2d3b; }
+        td { padding: 15px; color: #e1e1e6; font-size: 14px; border-bottom: 1px solid #2d2d3b; }
+        tr:hover td { background-color: rgba(255,255,255,0.02); }
+        .badge { background: #3a3a4c; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: #8b8b9f; }
+
+        /* ACTION BUTTONS */
+        .action-btns-container { display: flex; gap: 8px; justify-content: center; }
+        .btn-action { padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; border: none; color: white; transition: 0.2s;}
+        .btn-action:hover { opacity: 0.8; }
+        .btn-edit { background-color: #f39c12; }
+        .btn-delete { background-color: #ff4d4d; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #3a3a4c; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #8b8b9f; }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-wrapper">
+        <aside class="sidebar">
+            <h2>Admin<span style="color: #00d2ff;">Panel</span></h2>
+            <nav class="nav-menu">
+                <a href="/">💬 Chat Assistant</a>
+                <a href="/dashboard">📊 Dashboard</a>
+                <a href="/admin" class="active">⚙️ Settings</a>
+                <a href="/feedback-logs">📝 Feedback Logs</a>
+                <a href="/logout" style="margin-top: 20px; color: #ff4d4d;">🚪 Logout</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div class="header-top">
+                <h1>FAQ Management</h1>
+                <div style="color: #8b8b9f; font-size: 14px;">Add, edit, or remove knowledge base entries</div>
+            </div>
+
+            <div class="panel">
+                <h3>Editor</h3>
+                <form id="faqForm" method="POST" action="/add_faq" style="text-align: left;">
+                    <input type="hidden" name="faq_id" id="faqIdInput">
+                    
+                    <div style="margin-bottom: 15px;">
+                        <input type="text" name="question" id="questionInput" class="theme-input" placeholder="Enter Question or Trigger Word..." required>
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <textarea name="answer" id="answerInput" class="theme-input" placeholder="Enter the detailed answer..." required style="resize: vertical; min-height: 100px; font-family: inherit;"></textarea>
+                    </div>
+                    
+                    <div style="display: flex; gap: 15px;">
+                        <button type="submit" id="submitBtn" class="btn-main" style="flex: 1;">Add FAQ</button>
+                        <button type="button" id="cancelBtn" onclick="cancelEdit()" class="btn-main" style="flex: 1; background-color: #3a3a4c; display: none;">Cancel Edit</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="panel">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="margin: 0;">Existing Knowledge Base</h3>
+                    <input type="text" id="searchInput" onkeyup="filterTable()" class="theme-input" placeholder="🔍 Search database..." style="width: 300px; padding: 10px 15px;">
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table id="faqTable">
+                        <tr>
+                            <th>ID</th>
+                            <th>Question / Keyword</th>
+                            <th>AI Response</th>
+                            <th style="text-align: center;">Actions</th>
+                        </tr>
+                        
+                        {% for faq in faqs %}
+                        <tr>
+                            <td><span class="badge">#{{ faq[0] }}</span></td>
+                            <td style="font-weight: 500;">{{ faq[1] }}</td>
+                            <td style="color: #8b8b9f;">{{ faq[2] }}</td>
+                            <td>
+                                <div class="action-btns-container">
+                                    <button type="button" onclick="editFaq(this)" class="btn-action btn-edit">Edit</button>
+                                    
+                                    <form action="/delete_faq/{{ faq[0] }}" method="POST" style="margin: 0;">
+                                        <button type="submit" class="btn-action btn-delete">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function filterTable() {
+            let input = document.getElementById("searchInput");
+            let filter = input.value.toLowerCase();
+            let table = document.getElementById("faqTable");
+            let tr = table.getElementsByTagName("tr");
+
+            for (let i = 1; i < tr.length; i++) {
+                let tdQuestion = tr[i].getElementsByTagName("td")[1]; 
+                let tdAnswer = tr[i].getElementsByTagName("td")[2];   
+                
+                if (tdQuestion || tdAnswer) {
+                    let textQuestion = tdQuestion.textContent || tdQuestion.innerText;
+                    let textAnswer = tdAnswer.textContent || tdAnswer.innerText;
+                    
+                    if (textQuestion.toLowerCase().indexOf(filter) > -1 || textAnswer.toLowerCase().indexOf(filter) > -1) {
+                        tr[i].style.display = "";
+                    } else {
+                        tr[i].style.display = "none";
+                    }
+                }
+            }
+        }
+
+        function editFaq(button) {
+            let tr = button.closest("tr");
+            let id = tr.cells[0].innerText.replace('#', '').trim(); 
+            let question = tr.cells[1].innerText;
+            let answer = tr.cells[2].innerText;
+
+            document.getElementById("faqIdInput").value = id;
+            document.getElementById("questionInput").value = question;
+            document.getElementById("answerInput").value = answer;
+
+            document.getElementById("faqForm").action = "/update_faq";
+            document.getElementById("submitBtn").innerText = "Update FAQ";
+            document.getElementById("submitBtn").style.backgroundColor = "#f39c12"; 
+            document.getElementById("cancelBtn").style.display = "inline-block";
+
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        function cancelEdit() {
+            document.getElementById("faqForm").action = "/add_faq";
+            document.getElementById("faqIdInput").value = "";
+            document.getElementById("questionInput").value = "";
+            document.getElementById("answerInput").value = "";
+            
+            document.getElementById("submitBtn").innerText = "Add FAQ";
+            document.getElementById("submitBtn").style.backgroundColor = "#4da6ff"; 
+            document.getElementById("cancelBtn").style.display = "none";
+        }
+    </script>
+
+</body>
+</html>

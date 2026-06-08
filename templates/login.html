@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login</title>
+    <style>
+        /* RESET & BASE */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        /* Centered Full-Screen Background */
+        body { 
+            background-color: #1a1a27 !important; 
+            color: #fff !important; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
+
+        /* LOGIN CARD */
+        .login-card {
+            background-color: #1e1e2d;
+            border-radius: 16px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            border: 1px solid #2d2d3b;
+            text-align: center;
+        }
+
+        /* HEADER & LOGO */
+        .logo { font-size: 26px; font-weight: bold; margin-bottom: 25px; color: #fff; letter-spacing: 1px; }
+        .logo span { color: #00d2ff; }
+        .login-card h2 { font-size: 22px; margin-bottom: 8px; font-weight: 600; }
+        .login-card p { color: #8b8b9f; font-size: 14px; margin-bottom: 30px; }
+
+        /* INPUT FIELDS */
+        .input-group { margin-bottom: 20px; text-align: left; }
+        
+        .theme-input {
+            width: 100%; padding: 14px 18px; border-radius: 10px; border: 1px solid #3a3a4c;
+            background: #151521; color: white; font-size: 15px; transition: 0.3s;
+        }
+        .theme-input:focus { outline: none; border-color: #b066fe; box-shadow: 0 0 10px rgba(176,102,254,0.2); }
+
+        /* NEON BUTTON */
+        .btn-submit {
+            width: 100%; padding: 14px; border-radius: 10px; font-weight: bold; cursor: pointer; border: none;
+            color: white; font-size: 16px; transition: 0.3s;
+            background: linear-gradient(135deg, #b066fe 0%, #63e2ff 100%);
+            box-shadow: 0 4px 15px rgba(176,102,254,0.3);
+            margin-top: 10px;
+        }
+        .btn-submit:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        /* FOOTER LINK */
+        .footer-link { margin-top: 25px; color: #8b8b9f; font-size: 14px; }
+        .footer-link a { color: #00d2ff; text-decoration: none; font-weight: bold; transition: 0.2s; }
+        .footer-link a:hover { color: #b066fe; }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="logo">Admin<span>Panel</span></div>
+        
+        <h2>Welcome Back</h2>
+        <p>Enter your credentials to securely login.</p>
+
+        <form method="POST">
+            <div class="input-group">
+                <input type="text" name="username" placeholder="Username" required class="theme-input">
+            </div>
+            
+            <div class="input-group">
+                <input type="password" name="password" placeholder="Password" required class="theme-input">
+            </div>
+            
+            <button type="submit" class="btn-submit">Login</button>
+        </form>
+
+        <div class="footer-link">
+            Don't have an account? <a href="/register">Create Account</a>
+        </div>
+    </div>
+
+</body>
+</html>
