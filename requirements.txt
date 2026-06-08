@@ -1,8 +1,6 @@
 Flask
-gunicorn
 pyttsx3
 SpeechRecognition
-PyAudio
 scikit-learn
 numpy
 google-genai
