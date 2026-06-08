@@ -5,3 +5,4 @@ SpeechRecognition
 scikit-learn
 numpy
 google-genai
+python-dotenv
