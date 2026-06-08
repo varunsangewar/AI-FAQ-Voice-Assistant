@@ -159,6 +159,22 @@
             }).then(() => alert("Thanks for your feedback!"));
         }
 
+        // --- NEW: Browser Text-to-Speech Function ---
+        function speakAnswer(text) {
+            if ('speechSynthesis' in window) {
+                // Stop any current speaking before starting a new one
+                window.speechSynthesis.cancel(); 
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 1.0; // Speed (1.0 is normal)
+                utterance.pitch = 1.0; // Voice pitch
+                
+                window.speechSynthesis.speak(utterance);
+            } else {
+                console.log("Text-to-speech not supported in this browser.");
+            }
+        }
+
         function askQuestion() {
             const inputField = document.getElementById("userQuestion");
             const questionText = inputField.value.trim();
@@ -198,6 +214,9 @@
                     </div>
                 `;
                 chatBox.scrollTop = chatBox.scrollHeight;
+
+                // --- NEW: Trigger the voice to read the answer! ---
+                speakAnswer(data.answer);
             })
             .catch(error => {
                 chatBox.innerHTML += `<div class="msg-container ai"><div class="bubble ai" style="border-color: #ff0844; color: #ff0844;">⚠️ Connection Error.</div></div>`;
