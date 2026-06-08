@@ -1,4 +1,5 @@
 Flask
+gunicorn
 pyttsx3
 SpeechRecognition
 scikit-learn
