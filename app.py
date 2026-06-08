@@ -3,7 +3,6 @@ import sqlite3
 import threading 
 from auth import register_user, validate_user
 from nlp_engine import get_answer
-from voice.text_to_speech import speak
 
 app = Flask(__name__)
 app.secret_key = "AI_FAQ_SECRET"
@@ -63,10 +62,6 @@ def logout():
 def ask():
     user_question = request.form["question"]
     answer = get_answer(user_question)
-    
-    # Background thread for voice to prevent freezing
-    thread = threading.Thread(target=speak, args=(answer,))
-    thread.start()
     
     conn = sqlite3.connect("database/faq.db")
     cursor = conn.cursor()
