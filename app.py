@@ -1,3 +1,4 @@
+import os
 from flask import Flask, render_template, request, redirect, session, jsonify 
 import sqlite3
 import threading 
@@ -6,6 +7,59 @@ from nlp_engine import get_answer
 
 app = Flask(__name__)
 app.secret_key = "AI_FAQ_SECRET"
+
+# --- NEW: AUTO-BUILD DATABASE ON STARTUP ---
+os.makedirs("database", exist_ok=True)
+
+def init_db():
+    conn = sqlite3.connect("database/faq.db")
+    cursor = conn.cursor()
+    
+    # 1. Create Users Table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL
+        )
+    """)
+    
+    # 2. Create Chat History Table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS chat_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT,
+            question TEXT,
+            answer TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    
+    # 3. Create FAQ Table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS faq (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            question TEXT,
+            answer TEXT
+        )
+    """)
+    
+    # 4. Create Feedback Table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS feedback (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            chat_id INTEGER,
+            rating TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    
+    conn.commit()
+    conn.close()
+
+# Run the setup function immediately
+init_db()
+# -------------------------------------------
 
 @app.route("/")
 def home():
@@ -25,8 +79,11 @@ def register():
         try:
             register_user(username, password)
             return redirect("/login")
-        except:
-            return "User already exists"
+        except Exception as e:
+            # Prints the real error to Render logs
+            print(f"REGISTRATION CRASH: {e}") 
+            # Shows the real error on your screen instead of a fake message
+            return f"SYSTEM CRASHED: {e}" 
             
     return render_template("register.html")
 
