@@ -8,7 +8,7 @@ from nlp_engine import get_answer
 app = Flask(__name__)
 app.secret_key = "AI_FAQ_SECRET"
 
-# --- NEW: AUTO-BUILD DATABASE ON STARTUP ---
+# --- AUTO-BUILD DATABASE ON STARTUP ---
 os.makedirs("database", exist_ok=True)
 
 def init_db():
@@ -57,9 +57,7 @@ def init_db():
     conn.commit()
     conn.close()
 
-# Run the setup function immediately
 init_db()
-# -------------------------------------------
 
 @app.route("/")
 def home():
@@ -80,9 +78,7 @@ def register():
             register_user(username, password)
             return redirect("/login")
         except Exception as e:
-            # Prints the real error to Render logs
             print(f"REGISTRATION CRASH: {e}") 
-            # Shows the real error on your screen instead of a fake message
             return f"SYSTEM CRASHED: {e}" 
             
     return render_template("register.html")
@@ -113,52 +109,55 @@ def logout():
     return redirect("/login")
 
 # ----------------------------
-# Ask Question (UPDATED FOR REAL DATABASE ID)
+# Ask Question (FIXED DATA HANDLING)
 # ----------------------------
 @app.route("/ask", methods=["POST"])
 def ask():
-    user_question = request.form["question"]
-    answer = get_answer(user_question)
+    # Handle both JSON requests and standard Form payloads safely
+    if request.is_json:
+        data = request.get_json() or {}
+        user_question = data.get("question", "")
+    else:
+        user_question = request.form.get("question", "")
+        
+    if not user_question:
+        return jsonify({"error": "No question provided"}), 400
+        
+    username = session.get("user", "Guest")
+    
+    # Pass username directly to eliminate session context errors
+    answer = get_answer(user_question, username)
     
     conn = sqlite3.connect("database/faq.db")
     cursor = conn.cursor()
     cursor.execute(
         """
-        INSERT INTO chat_history
-        (username,question,answer)
-        VALUES(?,?,?)
+        INSERT INTO chat_history (username, question, answer)
+        VALUES (?, ?, ?)
         """,
-        (
-            session["user"],
-            user_question,
-            answer
-        )
+        (username, user_question, answer)
     )
-    # Get the exact ID of the row we just inserted
     real_chat_id = cursor.lastrowid 
     
     conn.commit()
     conn.close()
     
-    # Send the answer AND the real database ID back to the user
     return jsonify({"answer": answer, "chat_id": real_chat_id})
 
 # ----------------------------
-# Dashboard (UPGRADED FOR REAL DATA)
+# Dashboard
 # ----------------------------
 @app.route("/dashboard")
 def dashboard():
     conn = sqlite3.connect("database/faq.db")
     cursor = conn.cursor()
     
-    # 1. AUTO-UPGRADE DATABASE: Add timestamp if it doesn't exist
     try:
         cursor.execute("ALTER TABLE chat_history ADD COLUMN timestamp DATETIME DEFAULT CURRENT_TIMESTAMP")
         conn.commit()
     except:
-        pass # Safely ignore if the column already exists
+        pass 
         
-    # 2. GET TOP COUNTERS
     cursor.execute("SELECT * FROM chat_history ORDER BY id DESC")
     chats = cursor.fetchall()
     total_questions = len(chats)
@@ -175,7 +174,6 @@ def dashboard():
     except:
         total_users = 0
 
-    # 3. REAL CHART DATA: DAILY ACTIVITY
     cursor.execute("""
         SELECT date(timestamp), COUNT(*) 
         FROM chat_history 
@@ -188,17 +186,15 @@ def dashboard():
     
     bar_labels = []
     bar_data = []
-    for stat in reversed(daily_stats): # Reverse so graph goes left (old) to right (new)
+    for stat in reversed(daily_stats): 
         bar_labels.append(stat[0])
         bar_data.append(stat[1])
         
-    # Fallback if no questions exist today yet
     if not bar_labels:
         from datetime import date
         bar_labels = [str(date.today())]
         bar_data = [0]
 
-    # 4. REAL CHART DATA: TOP USERS
     cursor.execute("""
         SELECT username, COUNT(*) 
         FROM chat_history 
@@ -215,7 +211,6 @@ def dashboard():
         pie_labels = ["No Users Yet"]
         pie_data = [1]
 
-    # 5. REAL CHART DATA: FEEDBACK COUNTS (NEW)
     try:
         cursor.execute("SELECT rating, COUNT(*) FROM feedback GROUP BY rating")
         data = cursor.fetchall()
@@ -237,7 +232,7 @@ def dashboard():
         bar_data=bar_data,
         pie_labels=pie_labels,
         pie_data=pie_data,
-        feedback_counts=feedback_counts  # <--- Passed to frontend here
+        feedback_counts=feedback_counts
     )
 
 # ----------------------------
@@ -251,10 +246,7 @@ def admin():
     faqs = cursor.fetchall()
     conn.close()
     
-    return render_template(
-        "admin.html",
-        faqs=faqs
-    )
+    return render_template("admin.html", faqs=faqs)
 
 @app.route("/add_faq", methods=["POST"])
 def add_faq():
@@ -264,11 +256,7 @@ def add_faq():
     conn = sqlite3.connect("database/faq.db")
     cursor = conn.cursor()
     cursor.execute(
-        """
-        INSERT INTO faq
-        (question,answer)
-        VALUES(?,?)
-        """,
+        "INSERT INTO faq (question, answer) VALUES (?, ?)",
         (question, answer)
     )
     conn.commit()
@@ -286,11 +274,7 @@ def update_faq():
         conn = sqlite3.connect("database/faq.db")
         cursor = conn.cursor()
         cursor.execute(
-            """
-            UPDATE faq 
-            SET question = ?, answer = ? 
-            WHERE id = ?
-            """,
+            "UPDATE faq SET question = ?, answer = ? WHERE id = ?",
             (question, answer, faq_id)
         )
         conn.commit()
@@ -302,9 +286,7 @@ def update_faq():
 def delete_faq(faq_id):
     conn = sqlite3.connect("database/faq.db")
     cursor = conn.cursor()
-    
     cursor.execute("DELETE FROM faq WHERE id = ?", (faq_id,))
-    
     conn.commit()
     conn.close()
     
@@ -315,9 +297,9 @@ def delete_faq(faq_id):
 # ----------------------------
 @app.route('/feedback', methods=['POST'])
 def save_feedback():
-    data = request.json
+    data = request.json or {}
     chat_id = data.get('chat_id')
-    rating = data.get('rating') # Expecting 'up' or 'down'
+    rating = data.get('rating') 
     
     conn = sqlite3.connect('database/faq.db')
     cursor = conn.cursor()
@@ -330,7 +312,6 @@ def save_feedback():
 def view_feedback():
     conn = sqlite3.connect('database/faq.db')
     cursor = conn.cursor()
-    # Join with chat_history to see the actual questions people rated!
     cursor.execute('''
         SELECT f.rating, c.question, c.answer, f.timestamp 
         FROM feedback f
