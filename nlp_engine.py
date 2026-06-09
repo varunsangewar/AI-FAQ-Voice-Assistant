@@ -3,32 +3,29 @@ import time
 from google import genai
 from dotenv import load_dotenv
 import os
-from flask import session
 
 load_dotenv()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
 client = genai.Client(api_key=GEMINI_API_KEY)
 
-def get_answer(question):
+def get_answer(question, username="Guest"):
+    history_text = ""
+    
     # --- PHASE 1: Check Local Database ---
     try:
         conn = sqlite3.connect("database/faq.db")
         cursor = conn.cursor()
         
-        # We use LIKE with % wildcards to find partial matches
+        # Check partial match queries
         cursor.execute("SELECT answer FROM faq WHERE question LIKE ?", ('%' + question + '%',))
         local_match = cursor.fetchone()
         
-        # If we found an answer in our own database, return it immediately!
         if local_match:
             conn.close()
             return local_match[0]
             
         # --- PHASE 1.5: FETCH CONVERSATIONAL MEMORY ---
-        username = session.get("user", "Guest")
-        
         cursor.execute("""
             SELECT question, answer 
             FROM chat_history 
@@ -39,7 +36,6 @@ def get_answer(question):
         recent_chats = cursor.fetchall()[::-1] 
         conn.close()
 
-        history_text = ""
         for chat in recent_chats:
             history_text += f"User: {chat[0]}\nAI: {chat[1]}\n\n"
             
@@ -57,27 +53,25 @@ def get_answer(question):
     Current User Question: {question}
     """
     
-    # Try up to 3 times before giving up
     max_retries = 3
     for attempt in range(max_retries):
         try:
-            # UPGRADED TO ACTIVE STABLE MODEL
             response = client.models.generate_content(
-                model='gemini-2.5-flash', 
+                model='gemini-2.5-flash', # Or switch to 'gemini-2.0-flash' if needed
                 contents=custom_prompt
             )
             
-            if not response.text:
+            if not response or not response.text:
                 return "I'm sorry, my AI brain just drew a blank! Could you rephrase that?"
                 
             return response.text
             
         except Exception as e:
             error_message = str(e)
+            # Handle rate limiting or server overloads dynamically
             if "503" in error_message or "429" in error_message:
                 if attempt < (max_retries - 1):
                     time.sleep(3) 
                     continue
             
-            # If it's a different error, or we ran out of retries, show it
             return f"⚠️ AI Error: {error_message}"
