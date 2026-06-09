@@ -61,9 +61,9 @@ def get_answer(question):
     max_retries = 3
     for attempt in range(max_retries):
         try:
-            # Switched to the highly stable 1.5-flash model
+            # UPGRADED TO ACTIVE STABLE MODEL
             response = client.models.generate_content(
-                model='gemini-1.5-flash',
+                model='gemini-2.5-flash', 
                 contents=custom_prompt
             )
             
@@ -74,11 +74,10 @@ def get_answer(question):
             
         except Exception as e:
             error_message = str(e)
-            # If Google is busy (503) and we haven't run out of retries, wait 2 seconds and try again
-            if "503" in error_message and attempt < (max_retries - 1):
-                print(f"Server busy, retrying... (Attempt {attempt + 1})")
-                time.sleep(2) 
-                continue # Loops back to the top of the 'for' loop
-            else:
-                # If it's a different error, or we ran out of retries, finally show the error
-                return f"⚠️ AI Error: {error_message}"
+            if "503" in error_message or "429" in error_message:
+                if attempt < (max_retries - 1):
+                    time.sleep(3) 
+                    continue
+            
+            # If it's a different error, or we ran out of retries, show it
+            return f"⚠️ AI Error: {error_message}"
