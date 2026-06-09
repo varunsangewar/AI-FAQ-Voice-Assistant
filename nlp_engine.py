@@ -1,5 +1,5 @@
 import sqlite3
-import time # <--- NEW: Allows the app to pause and wait
+import time
 from google import genai
 from dotenv import load_dotenv
 import os
